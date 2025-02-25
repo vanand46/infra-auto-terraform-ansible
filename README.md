@@ -425,3 +425,6 @@ $ terraform validate
 $ terraform plan
 $ terraform apply -auto-approve
 ```
+![alt text](image-1.png)
+![alt text](image-4.png)
+![alt text](image-5.png)

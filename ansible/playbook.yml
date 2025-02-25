@@ -1,7 +1,11 @@
-- name: Configure Developer Infrastructure
+- name: Configure Developer Infrastructure on Ubuntu EC2
   hosts: infra_vm
   become: yes
   tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
     - name: Install necessary packages
       apt:
         name:
@@ -9,10 +13,31 @@
           - vim
           - curl
         state: present
-        update_cache: yes
 
-    - name: Create a new user 'infra_user'
-      user:
-        name: infra_user
-        password: "{{ 'password' | password_hash('sha512') }}"
-        shell: /bin/bash
+    - name: Install OpenJDK 11
+      apt:
+        name: openjdk-11-jdk
+        state: present
+
+    - name: Set JAVA_HOME in /etc/environment
+      lineinfile:
+        path: /etc/environment
+        line: 'JAVA_HOME="/usr/lib/jvm/java-11-openjdk-amd64"'
+        create: yes
+        state: present
+
+    - name: Update alternatives for java
+      command: update-alternatives --set java /usr/lib/jvm/java-11-openjdk-amd64/bin/java
+      args:
+        warn: false
+
+    - name: Update alternatives for javac
+      command: update-alternatives --set javac /usr/lib/jvm/java-11-openjdk-amd64/bin/javac
+      args:
+        warn: false
+
+    - name: Reload environment variables
+      shell: . /etc/environment && export
+      args:
+        executable: /bin/bash
+      changed_when: false
