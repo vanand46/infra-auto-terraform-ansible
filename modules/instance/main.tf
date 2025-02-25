@@ -19,16 +19,28 @@ resource "aws_instance" "infra_vm" {
     private_key = var.private_key_pem
     timeout     = "2m"
   }
-
-  # Remote-Exec Provisioner for installing Ansible on EC2 machine
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt update -y",
-      "sudo apt install ansible -y",
-    ]
-  }
 }
 
 output "public_ip" {
   value = aws_instance.infra_vm.public_ip
+}
+
+#
+# local-exec provisioner to:
+# 1. Generate Ansible inventory (inventory.ini)
+# 2. Run Ansible Playbook
+#
+
+resource "null_resource" "ansible_provision" {
+  depends_on = [aws_instance.infra_vm]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "[infra_vm]" > inventory.ini
+      echo "$(terraform output -raw public_ip) ansible_user=ubuntu ansible_ssh_private_key_file=infra-key.pem" >> inventory.ini
+
+      # Now run the ansible playbook
+      ansible-playbook -i inventory.ini ansible/playbook.yml
+    EOT
+  }
 }

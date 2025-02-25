@@ -16,9 +16,3 @@
         name: infra_user
         password: "{{ 'password' | password_hash('sha512') }}"
         shell: /bin/bash
-
-    - name: Set up SSH authorized key for infra_user
-      authorized_key:
-        user: infra_user
-        state: present
-        key: "{{ lookup('file', '~/.ssh/infra-key.pub') }}"

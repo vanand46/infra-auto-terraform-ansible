@@ -46,6 +46,35 @@ $ aws configure
 ```
 ![alt text](image-3.png)
 
+## Create Ansible Playbook
+Create `ansible/playbook.yml` with the following content to install necessary packages and create a user.
+```yml
+- name: Configure Developer Infrastructure
+  hosts: infra_vm
+  become: yes
+  tasks:
+    - name: Install necessary packages
+      apt:
+        name:
+          - git
+          - vim
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Create a new user 'infra_user'
+      user:
+        name: infra_user
+        password: "{{ 'password' | password_hash('sha512') }}"
+        shell: /bin/bash
+
+    - name: Set up SSH authorized key for infra_user
+      authorized_key:
+        user: infra_user
+        state: present
+        key: "{{ lookup('file', '~/.ssh/infra-key.pub') }}"
+```
+
 ## Terraform Configuration Directory Structure
 Configuration of terraform, structred as follows
 ```bash
@@ -389,42 +418,10 @@ output "instance_public_ip" {
   value = module.instance.public_ip
 }
 ```
-### Validate the Terraform Configuration ⚠️  
-*Note: This only validates the Terraform configuration. Provisioning will be automated using Shell script.*
+### Apply the Terraform Configuration
 ```bash
 $ terraform init
 $ terraform validate
 $ terraform plan
-```
-![alt text](image-1.png)
-![alt text](image-4.png)
-![alt text](image-5.png)
-
-## Create Ansible Playbook
-Create `ansible/playbook.yml` with the following content to install necessary packages and create a user.
-```yml
-- name: Configure Developer Infrastructure
-  hosts: infra_vm
-  become: yes
-  tasks:
-    - name: Install necessary packages
-      apt:
-        name:
-          - git
-          - vim
-          - curl
-        state: present
-        update_cache: yes
-
-    - name: Create a new user 'infra_user'
-      user:
-        name: infra_user
-        password: "{{ 'password' | password_hash('sha512') }}"
-        shell: /bin/bash
-
-    - name: Set up SSH authorized key for infra_user
-      authorized_key:
-        user: infra_user
-        state: present
-        key: "{{ lookup('file', '~/.ssh/infra-key.pub') }}"
+$ terraform apply -auto-approve
 ```
