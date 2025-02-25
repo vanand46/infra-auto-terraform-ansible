@@ -1,15 +1,24 @@
 # Setup Sandbox VM for Developers using Terraform and Ansible
 
 This solution automates infrastructure configuration and provisioning in AWS using Ansible and Terraform. 
-It includes steps for setting up Terraform for provisioning, Ansible for configuration, the AWS CLI, and Jenkins for automation.
-
+It includes steps for setting up Terraform for provisioning, Ansible for configuration and the AWS CLI
 ## Prerequisites
 - Linux Ubuntu Distribution
-- Install `python3` on Ubuntu
 - Install `wget` on Ubuntu
 - Install `curl` on Ubuntu
 - Install `unzip` on Ubuntu
 - AWS Account with credentials
+
+## Install Ansible(Using the OS Ubuntu)
+```bash
+$ sudo apt update -y
+$ sudo apt install -y software-properties-common
+$ sudo add-apt-repository --yes --update ppa:ansible/ansible
+$ sudo apt install -y ansible
+$ ansible --version
+```
+![alt text](image-6.png)
+
 
 ## Install Terraform (Using the OS Ubuntu)
 ```bash 
@@ -381,7 +390,7 @@ output "instance_public_ip" {
 }
 ```
 ### Validate the Terraform Configuration ⚠️  
-*Note: This only validates the Terraform configuration. Provisioning will be automated using Jenkins.*
+*Note: This only validates the Terraform configuration. Provisioning will be automated using Shell script.*
 ```bash
 $ terraform init
 $ terraform validate
@@ -418,5 +427,4 @@ Create `ansible/playbook.yml` with the following content to install necessary pa
         user: infra_user
         state: present
         key: "{{ lookup('file', '~/.ssh/infra-key.pub') }}"
-
 ```
