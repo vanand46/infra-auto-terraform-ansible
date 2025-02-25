@@ -17,7 +17,7 @@ resource "local_file" "infra_private_key" {
 }
 
 output "key_name" {
-  value = aws_key_pair.infra_rsa.key_name
+  value = aws_key_pair.infra_key_pair.key_name
 }
 
 output "private_key_pem" {
