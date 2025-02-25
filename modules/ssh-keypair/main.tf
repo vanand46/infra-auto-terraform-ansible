@@ -15,3 +15,12 @@ resource "local_file" "infra_private_key" {
   filename     = var.key_file_name
   file_permission = "0400"
 }
+
+output "key_name" {
+  value = aws_key_pair.infra_rsa.key_name
+}
+
+output "private_key_pem" {
+  value = tls_private_key.infra_rsa.private_key_pem
+  sensitive = true
+}

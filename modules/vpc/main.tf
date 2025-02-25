@@ -11,7 +11,7 @@ resource "aws_vpc" "infra_vpc" {
 resource "aws_subnet" "infra_subnet" {
   vpc_id                  = aws_vpc.infra_vpc.id
   cidr_block              = var.subnet_cidr_block
-  map_public_ip_on_launch = var.public_ip_on_launch
+  map_public_ip_on_launch = true
   depends_on              = [aws_vpc.infra_vpc]
   tags = {
     Name = var.subnet_name
@@ -50,4 +50,16 @@ resource "aws_route_table_association" "infra_route_association" {
   subnet_id      = aws_subnet.infra_subnet.id
   route_table_id = aws_route_table.infra_route_table.id
   depends_on     = [aws_subnet.infra_subnet, aws_route_table.infra_route_table]
+}
+
+output "vpc_id" {
+  value = aws_vpc.infra_vpc.id
+}
+
+output "subnet_id" {
+  value = aws_subnet.infra_subnet.id
+}
+
+output "internet_gateway_id" {
+  value = aws_internet_gateway.infra_gw.id
 }

@@ -30,11 +30,6 @@ variable "instance_name" {
   default = "Infra-Developer-VM"
 }
 
-variable "assign_public_ip" {
-  type    = boolean
-  default = true
-}
-
 variable "ssh_user" {
     type = string
     default = "ubuntu"

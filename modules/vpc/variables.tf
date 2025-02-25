@@ -13,11 +13,6 @@ variable "vpc_name" {
   default = "infra-vpc"
 }
 
-variable "public_ip_on_launch" {
-  type    = boolean
-  default = true
-}
-
 variable "subnet_name" {
   type    = string
   default = "infra-subnet"
