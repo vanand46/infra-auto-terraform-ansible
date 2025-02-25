@@ -305,7 +305,7 @@ variable "ingress_cidr_blocks" {
   default = ["0.0.0.0/0"]
 }
 ```
-### Configure Terraform AWS Instance with Remote-Exec Ansible Provisioner
+### Configure Terraform AWS Instance
 ```tf
 # modules/instance/main.tf
 #  Create an EC2 Instance
@@ -328,14 +328,6 @@ resource "aws_instance" "infra_vm" {
     user        = var.ssh_user
     private_key = var.private_key_pem
     timeout     = "2m"
-  }
-
-  # Remote-Exec Provisioner for installing Ansible on EC2 machine
-  provisioner "remote-exec" {
-    inline = [
-      "sudo apt update -y",
-      "sudo apt install ansible -y",
-    ]
   }
 }
 
@@ -382,7 +374,7 @@ variable "ssh_user" {
     default = "ubuntu"
 }
 ``` 
-### Terraform Entry Point Conifguration or Provider Configuration
+### Terraform Provider and Local Configuration
 ```tf
 # ./main.tf
 locals {
