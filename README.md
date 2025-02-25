@@ -37,61 +37,34 @@ $ aws configure
 ```
 ![alt text](image-3.png)
 
+## Terraform Configuration Directory Structure
+Configuration of terraform, structred as follows
+```bash
+.
+├── main.tf ## Entry point for terraform configuration
+└── modules
+    ├── instance ## Configuration for aws instance and remote-exec provisioning
+    │   ├── main.tf
+    │   └── variables.tf
+    ├── security-group ## Configuration for aws security group
+    │   ├── main.tf
+    │   └── variables.tf
+    ├── ssh-keypair ## Configuration for SSH Key
+    │   ├── main.tf
+    │   └── variables.tf
+    └── vpc    ## Configuration for aws vpc and subnet
+        ├── main.tf
+        └── variables.tf
+```
+
+
 ## Terraform Configuration for Provisioning AWS Instance
-### Configure Terraform with SSH Key
-Terraform configuration will generate an SSH key pair module, store the public key in AWS as an EC2 key pair, and save the private key locally for secure access to EC2 instances 
-```bash
-$ nano modules/ssh-keypair/variables.tf
-```
-```tf
-## modules/ssh-keypair/variables.tf
-variable "key_name" {
-  type    = string
-  default = "infra-key"
-}
 
-variable "key_file_name" {
-  type    = string
-  default = "infra-key.pem"
-}
-```
-```bash
-$ nano modules/ssh-keypair/main.tf
-```
-```tf
-## modules/ssh-keypair/main.tf
-resource "tls_private_key" "main" {
-  algorithm = "RSA"
-}
 
-resource "aws_key_pair" "main" {
-  key_name   = var.key_name
-  public_key = tls_private_key.main.public_key_openssh
-}
-
-resource "local_file" "private_key" {
-  content      = tls_private_key.main.private_key_pem
-  filename     = var.key_file_name
-  file_permission = "0400"
-}
-
-output "key_name" {
-  value = aws_key_pair.main.key_name
-}
-
-output "private_key_pem" {
-  value = tls_private_key.main.private_key_pem
-  sensitive = true
-}
-```
-
-### Please Validate the Terraform Configuration(!! This is for just checking and we are going to automate these provisioing using Jenkins)
+### Validate the Terraform Configuration ⚠️  
+*Note: This only validates the Terraform configuration. Provisioning will be automated using Jenkins.*
 ```bash
 $ terraform init
 $ terraform validate
 $ terraform plan
 ``` 
-#### Output
-![alt text](image-4.png)
-![alt text](image-5.png)
-![alt text](image-6.png)
