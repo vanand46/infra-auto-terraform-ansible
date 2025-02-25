@@ -1,15 +1,16 @@
 # Setup Sandbox VM for Developers using Terraform and Ansible
 
-This solution automates infrastructure configuration and provisioning in AWS using Ansible and Terraform. 
-It includes steps for setting up Terraform for provisioning, Ansible for configuration and the AWS CLI
-## Prerequisites
-- Linux Ubuntu Distribution
-- Install `wget` on Ubuntu
-- Install `curl` on Ubuntu
-- Install `unzip` on Ubuntu
-- AWS Account with credentials
+This solution automates infrastructure provisioning and configuration in AWS using Terraform and Ansible, incorporating the AWS CLI.
 
-## Install Ansible(Using the OS Ubuntu)
+All the source code described in this document is available on GitHub: [https://github.com/vanand46/infra-auto-terraform-ansible](https://github.com/vanand46/infra-auto-terraform-ansible)
+
+## Prerequisites
+
+* Ubuntu Linux environment
+* Required tools: `wget`, `curl`, `unzip` (install if needed)
+* AWS account with configured credentials
+
+## Install Ansible(Ubuntu)
 ```bash
 $ sudo apt update -y
 $ sudo apt install -y software-properties-common
@@ -17,17 +18,17 @@ $ sudo add-apt-repository --yes --update ppa:ansible/ansible
 $ sudo apt install -y ansible
 $ ansible --version
 ```
-![alt text](image-6.png)
+![ansible version](image-6.png)
 
 
-## Install Terraform (Using the OS Ubuntu)
+## Install Terraform (Ubuntu)
 ```bash 
 $ wget -O - https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
 $ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
 $ sudo apt update && sudo apt install terraform
 ```
 ### Output
-![alt text](image.png)
+![terraform version](image.png)
 
 ## Install and Configure AWS CLI
 ### AWS CLI Installation
@@ -38,59 +39,55 @@ $ sudo ./aws/install
 $ aws --version
 ```
 #### Output
-![alt text](image-2.png)
+![aws cli version](image-2.png)
 ### AWS CLI Configuration
 ```bash
 $ aws configure
 ## it will ask for aws cli access key, secret key and its zone.Please provide those.
 ```
-![alt text](image-3.png)
+![aws cli configure](image-3.png)
 
-## Create Ansible Playbook
-Create `ansible/playbook.yml` with the following content to install necessary packages and create a user.
+## Create Ansible Playbook for Package Installation
+Create the Ansible playbook file `playbook.yml` in the `ansible` directory. This playbook will install the necessary packages on your target servers. Add the following content:
 ```yml
-- name: Configure Developer Infrastructure
+- name: Configure Developer Infrastructure on Ubuntu EC2
   hosts: infra_vm
   become: yes
   tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
     - name: Install necessary packages
       apt:
         name:
           - git
           - vim
           - curl
+          - nodejs
         state: present
-        update_cache: yes
-
-    - name: Create a new user 'infra_user'
-      user:
-        name: infra_user
-        password: "{{ 'password' | password_hash('sha512') }}"
-        shell: /bin/bash
-
-    - name: Set up SSH authorized key for infra_user
-      authorized_key:
-        user: infra_user
-        state: present
-        key: "{{ lookup('file', '~/.ssh/infra-key.pub') }}"
 ```
 
 ## Terraform Configuration Directory Structure
-Configuration of terraform, structred as follows
+
+The Terraform configuration is organized as follows:
+
 ```bash
 .
-├── main.tf ## Entry point for terraform configuration
-└── modules
-    ├── instance ## Configuration for aws instance and remote-exec provisioning
+├── main.tf           # Main Terraform entry point (AWS provider, Ansible inventory, playbook execution)
+├── ansible/
+│   └── playbook.yml   # Ansible playbook for server configuration
+└── modules/
+    ├── instance/       # AWS EC2 instance configuration
     │   ├── main.tf
     │   └── variables.tf
-    ├── security-group ## Configuration for aws security group
+    ├── security-group/ # AWS security group configuration
     │   ├── main.tf
     │   └── variables.tf
-    ├── ssh-keypair ## Configuration for SSH Key
+    ├── ssh-keypair/    # AWS SSH key pair configuration
     │   ├── main.tf
     │   └── variables.tf
-    └── vpc    ## Configuration for aws vpc and subnet
+    └── vpc/            # AWS VPC and subnet configuration
         ├── main.tf
         └── variables.tf
 ```
@@ -375,6 +372,16 @@ variable "ssh_user" {
 }
 ``` 
 ### Terraform Provider and Local Configuration
+
+This section configures the AWS provider and manages local execution for infrastructure deployment and configuration.
+
+**Key Actions:**
+
+* **AWS Provider Setup**
+* **Resource Deployment:** Use defined Terraform modules to provision all required AWS resources (EC2 instances, VPCs, security groups, etc.)
+* **Dynamic Ansible Inventory and Playbook Execution:** Employs a `local-exec` provisioner to:
+    * Generate a dynamic Ansible inventory file based on the deployed AWS resources.
+    * Execute the Ansible playbook to configure the provisioned infrastructure.
 ```tf
 # ./main.tf
 locals {
@@ -394,23 +401,39 @@ module "ssh_keypair" {
 }
 
 module "security_group" {
-  source            = "./modules/security-group"
-  vpc_id            = module.vpc.vpc_id
+  source = "./modules/security-group"
+  vpc_id = module.vpc.vpc_id
 }
 
 module "instance" {
-  source             = "./modules/instance"
-  subnet_id          = module.vpc.subnet_id
-  security_group_id  = module.security_group.security_group_id
-  key_name           = module.ssh_keypair.key_name
-  private_key_pem    = module.ssh_keypair.private_key_pem
+  source            = "./modules/instance"
+  subnet_id         = module.vpc.subnet_id
+  security_group_id = module.security_group.security_group_id
+  key_name          = module.ssh_keypair.key_name
+  private_key_pem   = module.ssh_keypair.private_key_pem
 }
 
 output "instance_public_ip" {
   value = module.instance.public_ip
 }
+
+resource "null_resource" "ansible_provision" {
+  # Ensure this runs after instance creation
+  depends_on = [module.instance]
+
+  provisioner "local-exec" {
+    command = <<EOT
+      echo "Waiting for EC2 instance to be ready..."
+      sleep 180
+      echo "[infra_vm]" > inventory.ini
+      echo "${module.instance.public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=infra-key.pem" >> inventory.ini
+      ansible-playbook -i inventory.ini ansible/playbook.yml
+    EOT
+  }
+}
+
 ```
-### Apply the Terraform Configuration
+### Initialize, Validate, Plan, and Apply the Terraform Configuration
 ```bash
 $ terraform init
 $ terraform validate
@@ -420,3 +443,23 @@ $ terraform apply -auto-approve
 ![alt text](image-1.png)
 ![alt text](image-4.png)
 ![alt text](image-5.png)
+![alt text](image-7.png)
+
+## SSH Into Sandbox VM
+![ssh](image-9.png)
+![checking installed nodejs version](image-10.png)
+
+## AWS Resources Created
+- EC2 Instance Created
+![alt text](image-8.png)
+![alt text](image-11.png)
+
+- VPC and Subnet created
+![alt text](image-12.png)
+![alt text](image-13.png)
+
+- Security Group
+![alt text](image-14.png)
+
+- Key Pair
+![alt text](image-15.png)

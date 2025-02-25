@@ -37,6 +37,8 @@ resource "null_resource" "ansible_provision" {
 
   provisioner "local-exec" {
     command = <<EOT
+      echo "Waiting for EC2 instance to be ready..."
+      sleep 180
       echo "[infra_vm]" > inventory.ini
       echo "${module.instance.public_ip} ansible_user=ubuntu ansible_ssh_private_key_file=infra-key.pem" >> inventory.ini
       ansible-playbook -i inventory.ini ansible/playbook.yml
