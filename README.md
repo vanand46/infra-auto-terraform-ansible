@@ -18,7 +18,7 @@ $ sudo add-apt-repository --yes --update ppa:ansible/ansible
 $ sudo apt install -y ansible
 $ ansible --version
 ```
-![ansible version](image-6.png)
+![ansible version](images/image-6.png)
 
 
 ## Install Terraform (Ubuntu)
@@ -28,7 +28,7 @@ $ echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/has
 $ sudo apt update && sudo apt install terraform
 ```
 ### Output
-![terraform version](image.png)
+![terraform version](images/image.png)
 
 ## Install and Configure AWS CLI
 ### AWS CLI Installation
@@ -39,13 +39,13 @@ $ sudo ./aws/install
 $ aws --version
 ```
 #### Output
-![aws cli version](image-2.png)
+![aws cli version](images/image-2.png)
 ### AWS CLI Configuration
 ```bash
 $ aws configure
 ## it will ask for aws cli access key, secret key and its zone.Please provide those.
 ```
-![aws cli configure](image-3.png)
+![aws cli configure](images/image-3.png)
 
 ## Create Ansible Playbook for Package Installation
 Create the Ansible playbook file `playbook.yml` in the `ansible` directory. This playbook will install the necessary packages on your target servers. Add the following content:
@@ -440,26 +440,32 @@ $ terraform validate
 $ terraform plan
 $ terraform apply -auto-approve
 ```
-![alt text](image-1.png)
-![alt text](image-4.png)
-![alt text](image-5.png)
-![alt text](image-7.png)
+![alt text](images/image-1.png)
+![alt text](images/image-4.png)
+![alt text](images/image-5.png)
+![alt text](images/image-7.png)
 
 ## SSH Into Sandbox VM
-![ssh](image-9.png)
-![checking installed nodejs version](image-10.png)
+![ssh](images/image-9.png)
+![checking installed nodejs version](images/image-10.png)
 
 ## AWS Resources Created
 - EC2 Instance Created
-![alt text](image-8.png)
-![alt text](image-11.png)
+![alt text](images/image-8.png)
+![alt text](images/image-11.png)
 
 - VPC and Subnet created
-![alt text](image-12.png)
-![alt text](image-13.png)
+![alt text](images/image-12.png)
+![alt text](images/image-13.png)
 
 - Security Group
-![alt text](image-14.png)
+![alt text](images/image-14.png)
 
 - Key Pair
-![alt text](image-15.png)
+![alt text](images/image-15.png)
+
+### Destroy Resources - Terraform Configuration (When Decommissioning)
+To remove all infrastructure resources managed by Terraform, use the following command.
+```bash
+$ terraform destroy -auto-approve
+```
